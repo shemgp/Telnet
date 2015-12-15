@@ -11,7 +11,7 @@ Telnet client written in php
 
 ## Requirement
 
-- >= PHP 5.6
+- PHP 5.6 or later (PHP 7.0 ready!)
 
 
 ## Usage
@@ -37,6 +37,7 @@ try {
 
 ## Installation
 
+Use composer (https://packagist.org/packages/miyahan/telnet)
 
 
 ## Author
@@ -51,4 +52,5 @@ try {
 
 ## License
 
-[MIT](https://github.com/tcnksm/tool/blob/master/LICENCE)
+MIT
+
