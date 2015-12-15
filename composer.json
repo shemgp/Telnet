@@ -27,6 +27,7 @@
         {
             "name": "Frederik Sauer",
             "email": "fsa@dwarf.dk"
+        },
         {
             "name": "Kouhei Miyasaka",
             "email": "k.miyasaka@jpn21.net"
@@ -40,6 +41,6 @@
             "miyahan\\network\\": "src"
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "dev"
 }
 
