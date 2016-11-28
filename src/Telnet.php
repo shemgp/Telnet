@@ -340,8 +340,10 @@ class Telnet
                 return self::TELNET_OK;
             }
 
+            usleep(1);
+
             if ($c === false) {
-		// consume rest of the charaters
+                // consume rest of the charaters
                 while ($c = fgetc($this->socket));
                 if (empty($prompt)) {
                     return self::TELNET_OK;
@@ -360,6 +362,8 @@ class Telnet
 
             // append current char to global buffer
             $this->buffer .= $c;
+
+            //var_dump($this->buffer.' '.$c);
 
             // we've encountered the prompt. Break out of the loop
             if (!empty($prompt) && preg_match("/{$prompt}$/", $this->buffer)) {
