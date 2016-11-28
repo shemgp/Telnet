@@ -25,6 +25,8 @@ class Telnet
     private $strip_prompt = true;
     private $eol = "\r\n";
 
+    private $delay = 0;
+
     private $NULL;
     private $DC1;
     private $WILL;
@@ -161,6 +163,7 @@ class Telnet
      */
     public function login($username, $password, $host_type = 'linux')
     {
+        $this->delay = 0;
         switch ($host_type) {
             case 'linux':  // General Linux/UNIX
                 $user_prompt = 'login:';
@@ -172,6 +175,19 @@ class Telnet
                 $user_prompt = 'Username:';
                 $pass_prompt = 'Password:';
                 $prompt_reg = '[>#]';
+                break;
+
+            case 'eoc-master':    // eoc master
+                $user_prompt = 'Login:';
+                $pass_prompt = 'Password:';
+                $prompt_reg = '(>|:|\)#)';
+                break;
+
+            case 'eoc-modem':    // eoc modem
+                $user_prompt = 'login:';
+                $pass_prompt = 'Password:';
+                $prompt_reg = '#';
+                $this->delay = 100000;
                 break;
 
             case 'junos':  // Juniper Junos OS
@@ -205,6 +221,8 @@ class Telnet
             $this->write($password);
 
             // wait prompt
+            if ($this->delay)
+                usleep($this->delay);
             $this->setRegexPrompt($prompt_reg);
             $this->waitPrompt();
         } catch (\Exception $e) {
@@ -333,6 +351,8 @@ class Telnet
 
             // Interpreted As Command
             if ($c == $this->IAC) {
+                if ($this->delay)
+                    usleep($this->delay);
                 if ($this->negotiateTelnetOptions()) {
                     continue;
                 }
