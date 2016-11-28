@@ -103,7 +103,7 @@ class Telnet
 
         // attempt connection - suppress warnings
         $this->socket = @fsockopen($this->host, $this->port, $this->errno, $this->errstr, $this->timeout);
-
+        stream_set_blocking($this->socket, false);
         if (!$this->socket) {
             throw new \Exception("Cannot connect to $this->host on port $this->port");
         }
@@ -302,6 +302,11 @@ class Telnet
         // clear the buffer
         $this->clearBuffer();
 
+        $read = array($this->socket);
+        $write = null;
+        $expect = null;
+        stream_select($read, $write, $expect, $this->stream_timeout_sec, $this->stream_timeout_usec);
+
         $until_t = time() + $this->timeout;
         do {
             // time's up (loop can be exited at end or through continue!)
@@ -311,7 +316,15 @@ class Telnet
 
             $c = $this->getc();
 
+
+            if ($c === null)
+            {
+                return self::TELNET_OK;
+            }
+
             if ($c === false) {
+		// consume rest of the charaters
+                while ($c = fgetc($this->socket));
                 if (empty($prompt)) {
                     return self::TELNET_OK;
                 }
@@ -330,6 +343,8 @@ class Telnet
 
             // we've encountered the prompt. Break out of the loop
             if (!empty($prompt) && preg_match("/{$prompt}$/", $this->buffer)) {
+                // consume extra characters afer the prompt
+                while (fgetc($this->socket));
                 return self::TELNET_OK;
             }
 
@@ -356,6 +371,11 @@ class Telnet
         if ($add_newline == true) {
             $buffer .= $this->eol;
         }
+
+        $read = null;
+        $write = array($this->socket);
+        $expect = null;
+        stream_select($read, $write, $expect, $this->stream_timeout_sec, $this->stream_timeout_usec);
 
         $this->global_buffer->fwrite($buffer);
 
