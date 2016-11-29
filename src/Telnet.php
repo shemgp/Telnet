@@ -415,7 +415,7 @@ class Telnet
      *
      * @return string Content of the command buffer
      */
-    protected function getBuffer()
+    public function getBuffer()
     {
         // Remove all carriage returns from line breaks
         $buf = preg_replace('/\r\n|\r/', "\n", $this->buffer);
