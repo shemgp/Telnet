@@ -436,7 +436,12 @@ class Telnet
     public function getGlobalBuffer()
     {
         $this->global_buffer->rewind();
-        return $this->global_buffer->fread($this->global_buffer->getSize());
+        $global_buffer = '';
+        while (!$this->global_buffer->eof())
+        {
+            $global_buffer .= $this->global_buffer->fread(1024);
+        }
+        return $global_buffer;
     }
 
     /**
