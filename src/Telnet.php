@@ -105,10 +105,10 @@ class Telnet
 
         // attempt connection - suppress warnings
         $this->socket = @fsockopen($this->host, $this->port, $this->errno, $this->errstr, $this->timeout);
-        stream_set_blocking($this->socket, false);
         if (!$this->socket) {
             throw new \Exception("Cannot connect to $this->host on port $this->port");
         }
+        stream_set_blocking($this->socket, false);
 
         if (!empty($this->prompt)) {
             $this->waitPrompt();
