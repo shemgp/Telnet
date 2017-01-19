@@ -36,6 +36,8 @@ class Telnet
     private $IAC;
 
     private $global_buffer;
+    private $wait_for_command;
+    private $command;
 
     const TELNET_ERROR = false;
     const TELNET_OK = true;
@@ -142,9 +144,13 @@ class Telnet
      * @param boolean $add_newline Default true, adds newline to the command
      * @return string Command result
      */
-    public function exec($command, $add_newline = true)
+    public function exec($command, $add_newline = true, $options = [])
     {
+        $this->command = $command;
         $this->write($command, $add_newline);
+        if ((isset($options['start']) && $options['start']) ||
+                (isset($options['wait_for_command']) && $options['wait_for_command']))
+            $this->waitForCommand(true);
         $this->waitPrompt();
         return $this->getBuffer();
     }
@@ -267,6 +273,7 @@ class Telnet
     {
         $this->stream_timeout_usec = (int)(fmod($timeout, 1) * 1000000);
         $this->stream_timeout_sec = (int)$timeout;
+        $this->timeout = $timeout;
     }
 
     /**
@@ -325,6 +332,7 @@ class Telnet
         $expect = null;
         stream_select($read, $write, $expect, $this->stream_timeout_sec, $this->stream_timeout_usec);
 
+        $found_command = false;
         $until_t = time() + $this->timeout;
         do {
             // time's up (loop can be exited at end or through continue!)
@@ -348,6 +356,10 @@ class Telnet
                 if (empty($prompt)) {
                     return self::TELNET_OK;
                 }
+                else
+                {
+                    continue;
+                }
                 throw new \Exception("Couldn't find the requested : '" . $prompt . "', it was not in the data returned from server: " . $this->buffer);
             }
 
@@ -363,10 +375,21 @@ class Telnet
             // append current char to global buffer
             $this->buffer .= $c;
 
+            if ($this->wait_for_command && !$found_command && strpos($this->buffer, $this->wait_for_command) !== false)
+            {
+                $found_command = true;
+                continue;
+            }
+
+            // time's up (loop can be exited at end or through continue!)
+            if (time() > $until_t) {
+                throw new \Exception("Couldn't find the requested : '$prompt' within {$this->timeout} seconds");
+            }
             //var_dump($this->buffer.' '.$c);
 
             // we've encountered the prompt. Break out of the loop
-            if (!empty($prompt) && preg_match("/{$prompt}$/", $this->buffer)) {
+            if (!empty($prompt) && preg_match('/'.$prompt.'/', $this->buffer)) {
+
                 // consume extra characters afer the prompt
                 while (fgetc($this->socket));
                 return self::TELNET_OK;
@@ -478,5 +501,21 @@ class Telnet
     protected function waitPrompt()
     {
         return $this->readTo($this->prompt);
+    }
+
+    public function waitForCommand($command = true)
+    {
+        if ($command == false)
+        {
+            $this->wait_for_command = false;
+            return false;
+        }
+
+        if ($command === true)
+            $command = $this->command;
+
+        $this->wait_for_command = $command;
+
+        return true;
     }
 }
